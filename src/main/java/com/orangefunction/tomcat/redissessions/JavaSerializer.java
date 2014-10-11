@@ -31,14 +31,15 @@ public class JavaSerializer implements Serializer {
     }
 
     byte[] serialized = null;
-
-    try (
-         ByteArrayOutputStream bos = new ByteArrayOutputStream();
-         ObjectOutputStream oos = new ObjectOutputStream(new BufferedOutputStream(bos));
-    ) {
+    ByteArrayOutputStream bos = new ByteArrayOutputStream();
+    ObjectOutputStream oos = new ObjectOutputStream(new BufferedOutputStream(bos));
+    try {
       oos.writeUnshared(attributes);
       oos.flush();
       serialized = bos.toByteArray();
+    } finally {
+      oos.close();
+      bos.close();
     }
 
     MessageDigest digester = null;
@@ -53,15 +54,16 @@ public class JavaSerializer implements Serializer {
   @Override
   public byte[] serializeFrom(RedisSession session, SessionSerializationMetadata metadata) throws IOException {
     byte[] serialized = null;
-
-    try (
-         ByteArrayOutputStream bos = new ByteArrayOutputStream();
-         ObjectOutputStream oos = new ObjectOutputStream(new BufferedOutputStream(bos));
-    ) {
+    ByteArrayOutputStream bos = new ByteArrayOutputStream();
+    ObjectOutputStream oos = new ObjectOutputStream(new BufferedOutputStream(bos));
+    try {
       oos.writeObject(metadata);
       session.writeObjectData(oos);
       oos.flush();
       serialized = bos.toByteArray();
+    } finally {
+      oos.close();
+      bos.close();
     }
 
     return serialized;
@@ -69,13 +71,15 @@ public class JavaSerializer implements Serializer {
 
   @Override
   public void deserializeInto(byte[] data, RedisSession session, SessionSerializationMetadata metadata) throws IOException, ClassNotFoundException {
-    try(
-        BufferedInputStream bis = new BufferedInputStream(new ByteArrayInputStream(data));
-        ObjectInputStream ois = new CustomObjectInputStream(bis, loader);
-    ) {
+    BufferedInputStream bis = new BufferedInputStream(new ByteArrayInputStream(data));
+    ObjectInputStream ois = new CustomObjectInputStream(bis, loader);
+    try {
       SessionSerializationMetadata serializedMetadata = (SessionSerializationMetadata)ois.readObject();
       metadata.copyFieldsFrom(serializedMetadata);
       session.readObjectData(ois);
+    } finally {
+      ois.close();
+      bis.close();
     }
   }
 }
