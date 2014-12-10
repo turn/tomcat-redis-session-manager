@@ -1,4 +1,4 @@
-Redis Session Manager for Apache Tomcat
+Redis Session Manager for Apache Tomcat (java 1.6 & tomcat 7 compatible)
 =======================================
 
 Overview
